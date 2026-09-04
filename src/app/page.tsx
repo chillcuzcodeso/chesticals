@@ -4,6 +4,7 @@ import { FC, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChessBoard } from '@/components/chess/ChessBoard';
 import { ChessClock } from '@/components/chess/ChessClock';
+import { CapturedPieces } from '@/components/chess/CapturedPieces';
 import { RoomControls } from '@/components/ui/RoomControls';
 import { ThemeSearch } from '@/components/ui/ThemeSearch';
 import { HUD } from '@/components/ui/HUD';
@@ -24,6 +25,7 @@ const HomePage: FC = () => {
     currentTurn,
     isGameOver,
     result,
+    capturedPieces,
     onDrop,
     onSquareClick,
     makeMove,
@@ -294,8 +296,18 @@ const HomePage: FC = () => {
         >
           <div className="w-full max-w-7xl">
             <div className="backdrop-blur-2xl bg-black/30 border border-white/10 rounded-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] p-6 md:p-8">
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-start">
-                {/* Chess Board */}
+              <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] gap-6 items-start">
+                {/* Left Side - Captured Pieces (opponent's captures from your perspective) */}
+                <div className="flex justify-center lg:justify-end">
+                  <div className="w-32">
+                    <CapturedPieces
+                      pieces={playerColor === 'white' ? capturedPieces.black : capturedPieces.white}
+                      color={playerColor === 'white' ? 'black' : 'white'}
+                    />
+                  </div>
+                </div>
+
+                {/* Center - Chess Board */}
                 <div className="flex justify-center w-full">
                   <div className="w-full max-w-2xl" style={{ aspectRatio: '1/1' }}>
                     <ChessBoard
@@ -312,24 +324,30 @@ const HomePage: FC = () => {
                   </div>
                 </div>
 
-                {/* Chess Clock - Only in multiplayer */}
-                {roomStatus === 'playing' && (
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="flex justify-center lg:justify-start"
-                  >
-                    <ChessClock
-                      whiteTime={whiteTime}
-                      blackTime={blackTime}
-                      activeTimer={activeTimer}
-                      playerColor={playerColor}
-                      canPunchWhite={canPunchClock('white')}
-                      canPunchBlack={canPunchClock('black')}
-                      onPunchClock={handlePunchClock}
+                {/* Right Side - Your Captured Pieces */}
+                <div className="flex justify-center lg:justify-start">
+                  <div className="w-32">
+                    <CapturedPieces
+                      pieces={playerColor === 'white' ? capturedPieces.white : capturedPieces.black}
+                      color={playerColor === 'white' ? 'white' : 'black'}
                     />
-                  </motion.div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Clock below on mobile, beside on desktop */}
+              <div className="lg:hidden flex justify-center mt-6">
+
+              {roomStatus === 'playing' && (
+                  <ChessClock
+                    whiteTime={whiteTime}
+                    blackTime={blackTime}
+                    activeTimer={activeTimer}
+                    playerColor={playerColor}
+                    canPunchWhite={canPunchClock('white')}
+                    canPunchBlack={canPunchClock('black')}
+                    onPunchClock={handlePunchClock}
+                  />
                 )}
               </div>
             </div>

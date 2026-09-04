@@ -70,16 +70,7 @@ export const ChessBoard: FC<ChessBoardProps> = ({
   }, [validMoves, lastMove, game]);
 
   return (
-    <div 
-      className="w-full bg-red-500" 
-      style={{ 
-        aspectRatio: '1/1',
-        minHeight: '400px',
-        border: '5px solid yellow'
-      }}
-    >
-      <p className="text-white text-2xl">BOARD SHOULD BE HERE</p>
-      <p className="text-white">Position: {position}</p>
+    <div className="w-full" style={{ aspectRatio: '1/1' }}>
       <Chessboard
         id="main-chessboard"
         position={position}

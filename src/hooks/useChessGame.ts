@@ -26,6 +26,10 @@ export const useChessGame = (): UseChessGameReturn => {
   const [validMoves, setValidMoves] = useState<Square[]>([]);
   const [lastMove, setLastMove] = useState<LastMove | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
+  const [capturedPieces, setCapturedPieces] = useState<CapturedPieces>({
+    white: [],
+    black: [],
+  });
 
   /**
    * Handle piece drop from react-chessboard
@@ -44,6 +48,17 @@ export const useChessGame = (): UseChessGameReturn => {
       // If move is invalid, return false
       if (move === null) {
         return false;
+      }
+
+      // Track captured pieces
+      if (move.captured) {
+        const capturedPiece = move.captured;
+        const capturingColor = move.color === 'w' ? 'white' : 'black';
+        
+        setCapturedPieces(prev => ({
+          ...prev,
+          [capturingColor]: [...prev[capturingColor], capturedPiece],
+        }));
       }
 
       // Update game state
@@ -121,6 +136,17 @@ export const useChessGame = (): UseChessGameReturn => {
         return false;
       }
 
+      // Track captured pieces
+      if (move.captured) {
+        const capturedPiece = move.captured;
+        const capturingColor = move.color === 'w' ? 'white' : 'black';
+        
+        setCapturedPieces(prev => ({
+          ...prev,
+          [capturingColor]: [...prev[capturingColor], capturedPiece],
+        }));
+      }
+
       setGame(gameCopy);
       setPosition(gameCopy.fen());
       setLastMove({ from, to });
@@ -144,6 +170,7 @@ export const useChessGame = (): UseChessGameReturn => {
     setValidMoves([]);
     setLastMove(null);
     setSelectedSquare(null);
+    setCapturedPieces({ white: [], black: [] });
   }, []);
 
   return {
@@ -160,6 +187,7 @@ export const useChessGame = (): UseChessGameReturn => {
         ? 'Draw!'
         : 'Game over'
       : null,
+    capturedPieces,
     onDrop,
     onSquareClick,
     makeMove,
