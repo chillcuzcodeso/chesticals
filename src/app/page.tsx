@@ -236,19 +236,23 @@ const HomePage: FC = () => {
   };
 
   return (
-    <div 
-      className="min-h-screen transition-all duration-1000 relative"
-      style={{
-        background: currentTheme?.imageUrl 
-          ? `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url(${currentTheme.imageUrl})`
-          : currentTheme?.colors.background || 'linear-gradient(to bottom right, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-      }}
-    >
-      {/* Background overlay for better readability */}
-      <div className="absolute inset-0 bg-black/30 backdrop-blur-[1px]" />
+    <div className="relative min-h-[100dvh] overflow-x-hidden">
+      {/* Full-viewport background — fixed so it always covers the screen on mobile */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 bg-cover bg-center bg-no-repeat transition-all duration-1000"
+        style={
+          currentTheme?.imageUrl
+            ? {
+                backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url(${currentTheme.imageUrl})`,
+              }
+            : {
+                background:
+                  currentTheme?.colors.background ||
+                  'linear-gradient(to bottom right, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))',
+              }
+        }
+      />
+      <div className="pointer-events-none fixed inset-0 z-0 bg-black/30" />
 
       {/* HUD */}
       <HUD
@@ -260,17 +264,17 @@ const HomePage: FC = () => {
       />
 
       {/* Main container */}
-      <div className="container mx-auto px-4 py-6 relative z-10 min-h-screen flex flex-col">
+      <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-7xl flex-col px-3 py-4 sm:px-4 sm:py-6">
         {/* Header */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-6"
+          className="mb-4 pt-12 text-center sm:mb-6 sm:pt-2"
         >
-          <h1 className="text-5xl font-bold text-white mb-2 tracking-tight drop-shadow-lg">
+          <h1 className="mb-2 text-3xl font-bold tracking-tight text-white drop-shadow-lg sm:text-5xl">
             Chesticals
           </h1>
-          <p className="text-slate-300 text-lg drop-shadow-md">
+          <p className="text-sm text-slate-300 drop-shadow-md sm:text-lg">
             Real-time multiplayer chess with dynamic themes
           </p>
         </motion.div>
@@ -289,14 +293,14 @@ const HomePage: FC = () => {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="flex-1 flex items-center justify-center"
+          className="flex w-full min-w-0 flex-1 items-center justify-center"
         >
-          <div className="w-full max-w-7xl">
-            <div className="backdrop-blur-2xl bg-black/30 border border-white/10 rounded-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] p-6 md:p-8">
-              <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr_auto] gap-6 items-start">
-                {/* Left Side - Captured Pieces (opponent's captures from your perspective) */}
-                <div className="flex justify-center lg:justify-end">
-                  <div className="w-32">
+          <div className="w-full min-w-0">
+            <div className="rounded-2xl border border-white/10 bg-black/30 p-3 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:rounded-3xl sm:p-6 md:p-8">
+              <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[auto_1fr_auto] lg:gap-6">
+                {/* Opponent captures */}
+                <div className="flex w-full min-w-0 justify-center lg:justify-end">
+                  <div className="w-full lg:w-32">
                     <CapturedPieces
                       pieces={playerColor === 'white' ? capturedPieces.black : capturedPieces.white}
                       color={playerColor === 'white' ? 'black' : 'white'}
@@ -304,8 +308,8 @@ const HomePage: FC = () => {
                   </div>
                 </div>
 
-                {/* Center - Chess Board */}
-                <div className="flex justify-center w-full">
+                {/* Chess Board */}
+                <div className="flex w-full min-w-0 justify-center">
                   <div className="w-full max-w-2xl" style={{ aspectRatio: '1/1' }}>
                     <ChessBoard
                       position={position}
@@ -322,9 +326,9 @@ const HomePage: FC = () => {
                   </div>
                 </div>
 
-                {/* Right Side - Your Captured Pieces */}
-                <div className="flex justify-center lg:justify-start">
-                  <div className="w-32">
+                {/* Your captures */}
+                <div className="flex w-full min-w-0 justify-center lg:justify-start">
+                  <div className="w-full lg:w-32">
                     <CapturedPieces
                       pieces={playerColor === 'white' ? capturedPieces.white : capturedPieces.black}
                       color={playerColor === 'white' ? 'white' : 'black'}
@@ -337,7 +341,7 @@ const HomePage: FC = () => {
         </motion.div>
 
         {/* Room Controls */}
-        <div className="flex justify-center mt-6">
+        <div className="mt-4 flex w-full justify-center sm:mt-6">
           <RoomControls
             roomId={roomId}
             playerColor={playerColor}
@@ -390,7 +394,7 @@ const HomePage: FC = () => {
                 initial={{ scale: 0.9, y: 20 }}
                 animate={{ scale: 1, y: 0 }}
                 exit={{ scale: 0.9, y: 20 }}
-                className="backdrop-blur-2xl bg-black/40 border border-white/20 rounded-2xl p-8 text-center"
+                className="mx-4 max-w-sm rounded-2xl border border-white/20 bg-black/40 p-6 text-center backdrop-blur-2xl sm:p-8"
               >
                 <h2 className="text-3xl font-bold text-white mb-4">⏸️ Game Paused</h2>
                 <p className="text-slate-300 mb-6">Waiting for opponent...</p>
@@ -409,7 +413,7 @@ const HomePage: FC = () => {
 
         {/* Game Controls (only in multiplayer) */}
         {roomStatus === 'playing' && (
-          <div className="fixed top-24 right-6 z-40 flex flex-col gap-2">
+          <div className="fixed bottom-4 right-3 z-40 flex flex-col gap-2 sm:bottom-auto sm:right-6 sm:top-24">
             {!isGameOver && (
               <motion.button
                 initial={{ opacity: 0 }}

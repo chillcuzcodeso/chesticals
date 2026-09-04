@@ -35,10 +35,10 @@ export const HUD: FC<HUDProps> = ({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="fixed top-6 right-6 z-50"
+      className="fixed right-3 top-3 z-50 sm:right-6 sm:top-6"
     >
-      <div className="backdrop-blur-2xl bg-black/40 border border-white/10 rounded-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] p-4">
-        <div className="flex items-center gap-4">
+      <div className="rounded-xl border border-white/10 bg-black/40 p-2 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:rounded-2xl sm:p-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           {/* Connection Status */}
           <motion.div
             className="flex items-center gap-2"
@@ -60,7 +60,7 @@ export const HUD: FC<HUDProps> = ({
               ) : (
                 <WifiOff className="w-4 h-4 text-red-400" />
               )}
-              <span className="text-xs font-medium text-slate-300">
+              <span className="hidden text-xs font-medium text-slate-300 sm:inline">
                 {isConnected ? 'Connected' : 'Offline'}
               </span>
             </div>

@@ -58,7 +58,7 @@ export const RoomControls: FC<RoomControlsProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center gap-4 w-full max-w-md"
+        className="flex w-full max-w-md flex-col items-center gap-4 px-1"
       >
         <div className="backdrop-blur-2xl bg-black/40 border border-white/10 rounded-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] p-6 w-full">
           <h2 className="text-white text-xl font-bold mb-6 text-center">

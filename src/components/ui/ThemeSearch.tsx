@@ -52,7 +52,7 @@ export const ThemeSearch: FC<ThemeSearchProps> = ({
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto mb-8">
+    <div className="mx-auto mb-4 w-full max-w-2xl sm:mb-8">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -69,7 +69,7 @@ export const ThemeSearch: FC<ThemeSearchProps> = ({
             }}
             transition={{ duration: 0.2 }}
           >
-            <div className="flex items-center gap-4 px-5 py-4">
+            <div className="flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-5 sm:py-4">
               {/* Icon */}
               <motion.div
                 animate={isLoading ? { rotate: 360 } : {}}
@@ -86,7 +86,7 @@ export const ThemeSearch: FC<ThemeSearchProps> = ({
                 onFocus={() => setShowSuggestions(true)}
                 placeholder="Search themes..."
                 disabled={isLoading}
-                className="flex-1 bg-transparent text-white text-lg placeholder-slate-500 outline-none disabled:opacity-50 font-light"
+                className="flex-1 bg-transparent text-base font-light text-white outline-none placeholder-slate-500 disabled:opacity-50 sm:text-lg"
               />
 
               {/* Keyboard shortcut hint */}

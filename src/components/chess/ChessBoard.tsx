@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useMemo } from 'react';
+import { FC, useEffect, useMemo, useRef, useState } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Square } from 'chess.js';
 
@@ -29,20 +29,34 @@ export const ChessBoard: FC<ChessBoardProps> = ({
   onSquareClick,
   canDragPiece,
 }) => {
-  // Wrapper to convert string to Square type
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [boardWidth, setBoardWidth] = useState(() => {
+    if (typeof window === 'undefined') return 280;
+    return Math.max(200, Math.min(window.innerWidth - 48, 600));
+  });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const updateWidth = () => {
+      const width = Math.floor(el.getBoundingClientRect().width);
+      if (width > 0) setBoardWidth(width);
+    };
+
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const handlePieceDrop = (sourceSquare: string, targetSquare: string) => {
     return onDrop(sourceSquare as Square, targetSquare as Square);
   };
 
-  /**
-   * Generate custom square styles for:
-   * 1. Last move highlighting (yellow transparent)
-   * 2. Valid move indicators (dots and rings)
-   */
   const customSquareStyles = useMemo(() => {
     const styles: { [square: string]: React.CSSProperties } = {};
 
-    // Highlight last move squares
     if (lastMove) {
       styles[lastMove.from] = {
         backgroundColor: 'rgba(255, 255, 0, 0.4)',
@@ -52,18 +66,15 @@ export const ChessBoard: FC<ChessBoardProps> = ({
       };
     }
 
-    // Highlight valid move squares
     validMoves.forEach((square) => {
       const piece = game.get(square);
-      
+
       if (piece) {
-        // Square has opponent piece - show hollow ring
         styles[square] = {
           background: `radial-gradient(circle, transparent 60%, rgba(0, 0, 0, 0.3) 65%, rgba(0, 0, 0, 0.5) 70%, transparent 75%)`,
           ...styles[square],
         };
       } else {
-        // Empty square - show dot
         styles[square] = {
           background: `radial-gradient(circle, rgba(0, 0, 0, 0.2) 15%, transparent 20%)`,
           ...styles[square],
@@ -75,7 +86,7 @@ export const ChessBoard: FC<ChessBoardProps> = ({
   }, [validMoves, lastMove, game]);
 
   return (
-    <div className="w-full" style={{ aspectRatio: '1/1' }}>
+    <div ref={containerRef} className="w-full max-w-full" style={{ aspectRatio: '1/1' }}>
       <Chessboard
         id="main-chessboard"
         position={position}
@@ -83,7 +94,7 @@ export const ChessBoard: FC<ChessBoardProps> = ({
         onSquareClick={onSquareClick}
         boardOrientation={orientation}
         customSquareStyles={customSquareStyles}
-        boardWidth={600}
+        boardWidth={boardWidth}
         isDraggablePiece={({ piece }) =>
           canDragPiece ? canDragPiece(piece) : true
         }

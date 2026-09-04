@@ -35,7 +35,7 @@ export const CapturedPieces: FC<CapturedPiecesProps> = ({ pieces, color }) => {
   );
 
   return (
-    <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-xl p-3 min-h-[80px]">
+    <div className="min-h-[52px] rounded-xl border border-white/10 bg-white/5 p-2 backdrop-blur-xl sm:min-h-[80px] sm:p-3">
       <div className="flex flex-col gap-2">
         {/* Title */}
         <div className="flex items-center justify-between">
