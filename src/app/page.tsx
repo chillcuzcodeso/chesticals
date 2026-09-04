@@ -14,6 +14,11 @@ import { useChessClock } from '@/hooks/useChessClock';
 import { useTheme } from '@/hooks/useTheme';
 
 const HomePage: FC = () => {
+  // CACHE BUSTER TEST - SHOWS ON PAGE LOAD
+  useEffect(() => {
+    alert('🚀 NEW CODE LOADED! Version 9:08 PM - If you see this, the code updated!');
+  }, []);
+
   const [timeExpiredWinner, setTimeExpiredWinner] = useState<string | null>(null);
   const [isMusicMuted, setIsMusicMuted] = useState(false);
 
@@ -274,6 +279,17 @@ const HomePage: FC = () => {
           <p className="text-slate-300 text-lg drop-shadow-md">
             Real-time multiplayer chess with dynamic themes
           </p>
+          
+          {/* TEST BUTTON - REMOVE LATER */}
+          <button
+            onClick={() => {
+              alert('Button clicked! Testing handleDrop...');
+              handleDrop('e2', 'e4');
+            }}
+            className="mt-4 px-6 py-3 bg-red-500 text-white font-bold text-xl rounded-lg hover:bg-red-600"
+          >
+            🧪 TEST MOVE e2→e4
+          </button>
         </motion.div>
 
         {/* Theme Search */}
