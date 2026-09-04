@@ -28,6 +28,13 @@ export const ChessBoard: FC<ChessBoardProps> = ({
   onDrop,
   onSquareClick,
 }) => {
+  // Wrapper to debug if react-chessboard is calling onDrop
+  const handlePieceDrop = (sourceSquare: string, targetSquare: string) => {
+    alert(`🎯 ChessBoard received drop: ${sourceSquare} → ${targetSquare}`);
+    const result = onDrop(sourceSquare as Square, targetSquare as Square);
+    alert(`🎯 ChessBoard onDrop returned: ${result}`);
+    return result;
+  };
 
   /**
    * Generate custom square styles for:
@@ -74,7 +81,7 @@ export const ChessBoard: FC<ChessBoardProps> = ({
       <Chessboard
         id="main-chessboard"
         position={position}
-        onPieceDrop={onDrop}
+        onPieceDrop={handlePieceDrop}
         onSquareClick={onSquareClick}
         boardOrientation={orientation}
         customSquareStyles={customSquareStyles}
