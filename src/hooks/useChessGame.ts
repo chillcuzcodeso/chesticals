@@ -6,6 +6,11 @@ interface LastMove {
   to: Square;
 }
 
+interface CapturedPieces {
+  white: string[];
+  black: string[];
+}
+
 export interface UseChessGameReturn {
   game: Chess;
   position: string;
@@ -14,6 +19,7 @@ export interface UseChessGameReturn {
   isGameOver: boolean;
   result: string | null;
   currentTurn: 'w' | 'b';
+  capturedPieces: CapturedPieces;
   onDrop: (sourceSquare: Square, targetSquare: Square) => boolean;
   onSquareClick: (square: Square) => void;
   makeMove: (from: Square, to: Square) => boolean;
