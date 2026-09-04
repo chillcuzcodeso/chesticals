@@ -2,9 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import react-chessboard styles */
-@import 'react-chessboard/dist/chessboard.min.css';
-
 * {
   margin: 0;
   padding: 0;
