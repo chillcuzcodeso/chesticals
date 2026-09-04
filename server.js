@@ -176,6 +176,29 @@ io.on('connection', (socket) => {
   });
 
   /**
+   * Handle game reset
+   */
+  socket.on('reset-game', ({ roomId }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    // Reset clock
+    room.clock = {
+      whiteTime: 15 * 60 * 1000,
+      blackTime: 15 * 60 * 1000,
+      activeTimer: 'white',
+      lastUpdate: Date.now(),
+    };
+
+    console.log(`Game reset in room ${roomId}`);
+
+    // Broadcast reset to all players
+    io.to(roomId).emit('game-reset', {
+      clock: room.clock,
+    });
+  });
+
+  /**
    * Handle clock punch
    */
   socket.on('punch-clock', ({ roomId, color }) => {

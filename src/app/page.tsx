@@ -46,11 +46,13 @@ const HomePage: FC = () => {
     sendThemeChange,
     pauseGame,
     resumeGame,
+    resetGame: resetMultiplayerGame,
     onOpponentMove,
     onClockUpdate,
     onThemeUpdate,
     onGamePaused,
     onGameResumed,
+    onGameReset,
   } = useMultiplayer();
 
   const {
@@ -142,7 +144,12 @@ const HomePage: FC = () => {
     onGameResumed(() => {
       console.log('Game resumed by opponent');
     });
-  }, [onGamePaused, onGameResumed]);
+    onGameReset(() => {
+      console.log('Game reset by opponent');
+      resetGame();
+      resetClock();
+    });
+  }, [onGamePaused, onGameResumed, onGameReset, resetGame, resetClock]);
 
   /**
    * Start clock when game starts in multiplayer
@@ -163,6 +170,19 @@ const HomePage: FC = () => {
     // Send to server if in multiplayer
     if (roomStatus === 'playing') {
       sendClockPunch(color);
+    }
+  };
+
+  /**
+   * Handle game reset (board + clock)
+   */
+  const handleGameReset = () => {
+    resetGame();
+    resetClock();
+    
+    // Sync with opponent if in multiplayer
+    if (roomStatus === 'playing') {
+      resetMultiplayerGame();
     }
   };
 

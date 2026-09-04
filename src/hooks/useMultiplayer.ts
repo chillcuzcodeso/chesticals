@@ -33,11 +33,13 @@ export interface UseMultiplayerReturn {
   sendThemeChange: (theme: any) => void;
   pauseGame: () => void;
   resumeGame: () => void;
+  resetGame: () => void;
   onOpponentMove: (callback: (move: Move) => void) => void;
   onClockUpdate: (callback: (clock: ClockState) => void) => void;
   onThemeUpdate: (callback: (theme: any) => void) => void;
   onGamePaused: (callback: () => void) => void;
   onGameResumed: (callback: () => void) => void;
+  onGameReset: (callback: () => void) => void;
 }
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
@@ -57,6 +59,7 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
   const themeUpdateCallbackRef = useRef<((theme: any) => void) | null>(null);
   const gamePausedCallbackRef = useRef<(() => void) | null>(null);
   const gameResumedCallbackRef = useRef<(() => void) | null>(null);
+  const gameResetCallbackRef = useRef<(() => void) | null>(null);
 
   /**
    * Initialize socket connection
@@ -128,6 +131,14 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
       setIsPaused(false);
       if (gameResumedCallbackRef.current) {
         gameResumedCallbackRef.current();
+      }
+    });
+
+    newSocket.on('game-reset', ({ clock }) => {
+      console.log('Game reset');
+      setClockState(clock);
+      if (gameResetCallbackRef.current) {
+        gameResetCallbackRef.current();
       }
     });
 
@@ -257,6 +268,14 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
   }, [socket, roomId]);
 
   /**
+   * Reset game (board + clock)
+   */
+  const resetGame = useCallback(() => {
+    if (!socket || !roomId) return;
+    socket.emit('reset-game', { roomId });
+  }, [socket, roomId]);
+
+  /**
    * Register callback for clock updates
    */
   const onClockUpdate = useCallback((callback: (clock: ClockState) => void) => {
@@ -284,6 +303,13 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
     gameResumedCallbackRef.current = callback;
   }, []);
 
+  /**
+   * Register callback for game reset
+   */
+  const onGameReset = useCallback((callback: () => void) => {
+    gameResetCallbackRef.current = callback;
+  }, []);
+
   return {
     socket,
     roomId,
@@ -301,10 +327,12 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
     sendThemeChange,
     pauseGame,
     resumeGame,
+    resetGame,
     onOpponentMove,
     onClockUpdate,
     onThemeUpdate,
     onGamePaused,
     onGameResumed,
+    onGameReset,
   };
 };
