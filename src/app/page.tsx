@@ -2,28 +2,18 @@
 
 import { FC, useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Square } from 'chess.js';
 import { ChessBoard } from '@/components/chess/ChessBoard';
-import { ChessClock } from '@/components/chess/ChessClock';
 import { CapturedPieces } from '@/components/chess/CapturedPieces';
 import { RoomControls } from '@/components/ui/RoomControls';
 import { ThemeSearch } from '@/components/ui/ThemeSearch';
 import { HUD } from '@/components/ui/HUD';
 import { useChessGame } from '@/hooks/useChessGame';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
-import { useChessClock } from '@/hooks/useChessClock';
 import { useTheme } from '@/hooks/useTheme';
 
 const HomePage: FC = () => {
-  // CACHE BUSTER TEST - SHOWS ON PAGE LOAD
-  useEffect(() => {
-    alert('🚀 NEW CODE LOADED! Version 9:08 PM - If you see this, the code updated!');
-  }, []);
-
   // Track if the last move was sent (to avoid double-sending)
   const lastSentMoveRef = useRef<{from: string, to: string} | null>(null);
-
-  const [timeExpiredWinner, setTimeExpiredWinner] = useState<string | null>(null);
   const [isMusicMuted, setIsMusicMuted] = useState(false);
 
   const {
@@ -47,38 +37,21 @@ const HomePage: FC = () => {
     roomStatus,
     isConnected,
     opponentDisconnected,
-    clockState,
     isPaused,
     createRoom,
     joinRoom,
     leaveRoom,
     sendMove,
-    sendClockPunch,
     sendThemeChange,
     pauseGame,
     resumeGame,
     resetGame: resetMultiplayerGame,
     onOpponentMove,
-    onClockUpdate,
     onThemeUpdate,
     onGamePaused,
     onGameResumed,
     onGameReset,
   } = useMultiplayer();
-
-  const {
-    whiteTime,
-    blackTime,
-    activeTimer,
-    isWhiteExpired,
-    isBlackExpired,
-    canPunchClock,
-    startClock,
-    punchClock,
-    resetClock,
-  } = useChessClock(currentTurn, (winner) => {
-    setTimeExpiredWinner(`${winner.charAt(0).toUpperCase() + winner.slice(1)} wins on time!`);
-  });
 
   const {
     currentTheme,
@@ -92,23 +65,14 @@ const HomePage: FC = () => {
    * Handle local move and send to opponent
    */
   const handleDrop = (sourceSquare: any, targetSquare: any) => {
-    alert(`MOVE ATTEMPT: ${sourceSquare} → ${targetSquare}\nPlayer: ${playerColor}\nRoom: ${roomId}`);
-    
-    // Make the move locally (NO validation for now)
+    // Make the move locally
     const success = onDrop(sourceSquare, targetSquare);
     
-    alert(`Move success: ${success}`);
-    
-    // ALWAYS send to server if successful
+    // Send to server if successful
     if (success && roomId) {
       // Mark this move as sent so we don't double-send via lastMove watcher
       lastSentMoveRef.current = { from: sourceSquare, to: targetSquare };
-      
-      alert(`📤 SENDING TO SERVER!\nRoom: ${roomId}\nMove: ${sourceSquare}→${targetSquare}\nSocket connected: ${isConnected}`);
       sendMove({ from: sourceSquare, to: targetSquare });
-      alert(`✅ sendMove() called!`);
-    } else {
-      alert(`❌ NOT SENDING!\nsuccess=${success}\nroomId=${roomId}`);
     }
 
     return success;
@@ -126,7 +90,6 @@ const HomePage: FC = () => {
       lastSentMoveRef.current?.to === lastMove.to;
     
     if (!alreadySent) {
-      alert(`📤 CLICK MOVE DETECTED: ${lastMove.from}→${lastMove.to}`);
       lastSentMoveRef.current = lastMove;
       sendMove({ from: lastMove.from, to: lastMove.to });
     }
@@ -137,20 +100,9 @@ const HomePage: FC = () => {
    */
   useEffect(() => {
     onOpponentMove((move) => {
-      alert(`RECEIVED OPPONENT MOVE: ${move.from} to ${move.to}`);
-      const success = makeMove(move.from, move.to);
-      alert(`Applied opponent move: ${success}`);
+      makeMove(move.from, move.to);
     });
   }, [onOpponentMove, makeMove]);
-
-  /**
-   * Register clock update handler
-   */
-  useEffect(() => {
-    onClockUpdate((clock) => {
-      console.log('Clock synced from server:', clock);
-    });
-  }, [onClockUpdate]);
 
   /**
    * Register theme update handler
@@ -176,40 +128,15 @@ const HomePage: FC = () => {
       console.log('Game resumed by opponent');
     });
     onGameReset(() => {
-      console.log('Game reset by opponent');
       resetGame();
-      resetClock();
     });
-  }, [onGamePaused, onGameResumed, onGameReset, resetGame, resetClock]);
+  }, [onGamePaused, onGameResumed, onGameReset, resetGame]);
 
   /**
-   * Start clock when game starts in multiplayer
-   */
-  useEffect(() => {
-    if (roomStatus === 'playing' && clockState && !activeTimer) {
-      startClock();
-    }
-  }, [roomStatus, clockState, activeTimer, startClock]);
-
-  /**
-   * Handle clock punch
-   */
-  const handlePunchClock = (color: 'white' | 'black') => {
-    // Punch local clock
-    punchClock(color);
-    
-    // Send to server if in multiplayer
-    if (roomStatus === 'playing') {
-      sendClockPunch(color);
-    }
-  };
-
-  /**
-   * Handle game reset (board + clock)
+   * Handle game reset
    */
   const handleGameReset = () => {
     resetGame();
-    resetClock();
     
     // Sync with opponent if in multiplayer
     if (roomStatus === 'playing') {
@@ -222,9 +149,7 @@ const HomePage: FC = () => {
    */
   const handleResetGame = () => {
     resetGame();
-    resetClock();
     leaveRoom();
-    setTimeExpiredWinner(null);
   };
 
   /**
@@ -233,11 +158,8 @@ const HomePage: FC = () => {
   const boardOrientation = 
     playerColor === 'black' ? 'black' : 'white';
 
-  /**
-   * Get final result including time expiration
-   */
-  const finalResult = timeExpiredWinner || result;
-  const finalGameOver = isGameOver || isWhiteExpired || isBlackExpired;
+  const finalResult = result;
+  const finalGameOver = isGameOver;
 
   /**
    * Handle theme search
@@ -305,17 +227,6 @@ const HomePage: FC = () => {
           <p className="text-slate-300 text-lg drop-shadow-md">
             Real-time multiplayer chess with dynamic themes
           </p>
-          
-          {/* TEST BUTTON - REMOVE LATER */}
-          <button
-            onClick={() => {
-              alert('Button clicked! Testing handleDrop...');
-              handleDrop('e2', 'e4');
-            }}
-            className="mt-4 px-6 py-3 bg-red-500 text-white font-bold text-xl rounded-lg hover:bg-red-600"
-          >
-            🧪 TEST MOVE e2→e4
-          </button>
         </motion.div>
 
         {/* Theme Search */}
@@ -373,22 +284,6 @@ const HomePage: FC = () => {
                     />
                   </div>
                 </div>
-              </div>
-
-              {/* Clock below on mobile, beside on desktop */}
-              <div className="lg:hidden flex justify-center mt-6">
-
-              {roomStatus === 'playing' && (
-                  <ChessClock
-                    whiteTime={whiteTime}
-                    blackTime={blackTime}
-                    activeTimer={activeTimer}
-                    playerColor={playerColor}
-                    canPunchWhite={canPunchClock('white')}
-                    canPunchBlack={canPunchClock('black')}
-                    onPunchClock={handlePunchClock}
-                  />
-                )}
               </div>
             </div>
           </div>

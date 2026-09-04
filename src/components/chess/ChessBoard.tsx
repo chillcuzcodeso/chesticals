@@ -3,7 +3,6 @@
 import { FC, useMemo } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Square } from 'chess.js';
-import { motion } from 'framer-motion';
 
 interface ChessBoardProps {
   position: string;
@@ -28,18 +27,10 @@ export const ChessBoard: FC<ChessBoardProps> = ({
   onDrop,
   onSquareClick,
 }) => {
-  // Wrapper to debug if react-chessboard is calling onDrop
+  // Wrapper to convert string to Square type
   const handlePieceDrop = (sourceSquare: string, targetSquare: string) => {
-    alert(`🎯 BOARD ORIENTATION: ${orientation}\n🎯 DROP: ${sourceSquare} → ${targetSquare}`);
-    const result = onDrop(sourceSquare as Square, targetSquare as Square);
-    alert(`🎯 Result: ${result}`);
-    return result;
+    return onDrop(sourceSquare as Square, targetSquare as Square);
   };
-
-  // Log when board mounts with orientation
-  if (typeof window !== 'undefined') {
-    console.log('🎲 ChessBoard mounted with orientation:', orientation);
-  }
 
   /**
    * Generate custom square styles for:
