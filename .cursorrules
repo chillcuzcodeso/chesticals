@@ -1,0 +1,154 @@
+# Chess Application Development Rules
+
+## Core Stack
+- **Framework**: Next.js 14 App Router
+- **Language**: TypeScript (strict mode)
+- **Styling**: Tailwind CSS
+- **Chess Logic**: chess.js
+- **Board UI**: react-chessboard
+- **Real-time**: Socket.io (client + server)
+- **Icons**: lucide-react
+- **Animations**: framer-motion
+
+## Architecture Principles
+
+### Separation of Concerns
+1. **Game Logic** (`src/hooks/useChessGame.ts`)
+   - All chess.js interactions
+   - Move validation
+   - Game state management
+   - Check/checkmate detection
+
+2. **Board UI** (`src/components/chess/*`)
+   - Visual representation only
+   - Receives state via props
+   - Emits user actions via callbacks
+   - No direct chess logic
+
+3. **Network Logic** (`src/hooks/useMultiplayer.ts`)
+   - Socket.io connection management
+   - Room join/leave
+   - Move synchronization
+   - Player state updates
+
+### Component Design
+- **Maximum 150 lines per component**
+- Break down into smaller, focused sub-components
+- Use composition over complexity
+- Extract reusable logic into custom hooks
+- Co-locate related components in feature folders
+
+### Code Organization
+```
+src/
+├── app/                    # Next.js App Router pages
+├── components/
+│   ├── chess/             # Chess-specific components
+│   └── ui/                # Reusable UI components
+├── hooks/                 # Custom React hooks
+│   ├── useChessGame.ts   # Game logic hook
+│   └── useMultiplayer.ts # Network logic hook
+└── lib/                   # Utilities and helpers
+
+server.js                  # Express + Socket.io backend
+```
+
+## Coding Standards
+
+### TypeScript
+- Use strict type checking
+- Define interfaces for all props and state
+- Avoid `any` type - use `unknown` if needed
+- Export types alongside components
+
+### Components
+- Prefer functional components with hooks
+- Use proper TypeScript types for props
+- Implement proper error boundaries
+- Use React.memo() for expensive renders
+
+### Custom Hooks
+- Prefix with `use`
+- Return objects, not arrays (better for selective destructuring)
+- Document return values with TypeScript
+- Keep hooks focused on single responsibility
+
+### Styling
+- Use Tailwind utility classes
+- Create custom components in `src/components/ui` for repeated patterns
+- Use CSS variables for theme colors
+- Implement dark mode by default
+- Use glassmorphic design: backdrop-blur, transparency, subtle borders
+
+### Animations
+- Use framer-motion for all transitions
+- Keep animations subtle and performant (60fps)
+- Standard durations: 0.2s for micro, 0.3s for standard, 0.5s for emphasis
+- Use spring animations for natural feel
+
+### Icons
+- Use lucide-react exclusively
+- Consistent sizing: w-4 h-4 (small), w-5 h-5 (medium), w-6 h-6 (large)
+- Pass className for custom styling
+
+## Multiplayer Patterns
+
+### Socket Events (Client)
+- `join-room`: Join a game room
+- `move`: Send a move to server
+- `leave-room`: Leave current game
+- `offer-draw`: Offer draw to opponent
+- `resign`: Resign current game
+
+### Socket Events (Server → Client)
+- `game-state`: Full game state update
+- `move-made`: Opponent made a move
+- `player-joined`: New player joined
+- `player-left`: Player disconnected
+- `game-over`: Game ended
+
+### State Management
+- Use React Context for global game state if needed
+- Keep socket connection in a single hook
+- Sync local state with server state
+- Handle reconnection gracefully
+
+## Performance
+- Lazy load heavy components (chess board, move history)
+- Memoize expensive calculations
+- Debounce rapid events (move previews)
+- Use React.memo for static components
+- Optimize re-renders with proper dependency arrays
+
+## Error Handling
+- Wrap async operations in try-catch
+- Show user-friendly error messages
+- Log errors for debugging
+- Handle network disconnections gracefully
+- Validate moves client-side before sending
+
+## Testing Considerations
+- Write testable hooks (pure functions where possible)
+- Mock socket.io for testing
+- Test chess logic independently
+- Snapshot test UI components
+
+## UI/UX Guidelines
+- Dark theme with glassmorphic cards
+- Smooth transitions between states
+- Loading states for network operations
+- Toast notifications for game events
+- Responsive design (mobile-first)
+- Accessibility: keyboard navigation, ARIA labels
+
+## File Naming
+- Components: PascalCase (e.g., `ChessBoard.tsx`)
+- Hooks: camelCase with `use` prefix (e.g., `useChessGame.ts`)
+- Utilities: camelCase (e.g., `formatTime.ts`)
+- Types: PascalCase with `.types.ts` suffix if separate file
+
+## Comments
+- Document complex game logic
+- Explain non-obvious chess rules
+- Add JSDoc for exported functions
+- Keep comments concise and up-to-date
