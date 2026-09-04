@@ -2,7 +2,7 @@ services:
   - type: web
     name: chesticals-server
     env: node
-    buildCommand: npm install express socket.io
+    buildCommand: cp server-package.json package.json && npm install
     startCommand: node server.js
     plan: free
     envVars:
