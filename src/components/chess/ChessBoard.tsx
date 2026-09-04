@@ -14,6 +14,7 @@ interface ChessBoardProps {
   lightSquareColor?: string;
   onDrop: (sourceSquare: Square, targetSquare: Square) => boolean;
   onSquareClick: (square: Square) => void;
+  canDragPiece?: (piece: string) => boolean;
 }
 
 export const ChessBoard: FC<ChessBoardProps> = ({
@@ -26,6 +27,7 @@ export const ChessBoard: FC<ChessBoardProps> = ({
   lightSquareColor = '#ebecd0',
   onDrop,
   onSquareClick,
+  canDragPiece,
 }) => {
   // Wrapper to convert string to Square type
   const handlePieceDrop = (sourceSquare: string, targetSquare: string) => {
@@ -82,7 +84,9 @@ export const ChessBoard: FC<ChessBoardProps> = ({
         boardOrientation={orientation}
         customSquareStyles={customSquareStyles}
         boardWidth={600}
-        isDraggablePiece={() => true}
+        isDraggablePiece={({ piece }) =>
+          canDragPiece ? canDragPiece(piece) : true
+        }
         customBoardStyle={{
           borderRadius: '12px',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',

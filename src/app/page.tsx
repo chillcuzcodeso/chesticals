@@ -2,6 +2,7 @@
 
 import { FC, useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Square } from 'chess.js';
 import { ChessBoard } from '@/components/chess/ChessBoard';
 import { CapturedPieces } from '@/components/chess/CapturedPieces';
 import { RoomControls } from '@/components/ui/RoomControls';
@@ -62,21 +63,57 @@ const HomePage: FC = () => {
     resetTheme,
   } = useTheme();
 
+  const isOwnPiece = (square: Square): boolean => {
+    const piece = game.get(square);
+    if (!piece || !playerColor) return false;
+    return (
+      (piece.color === 'w' && playerColor === 'white') ||
+      (piece.color === 'b' && playerColor === 'black')
+    );
+  };
+
   /**
    * Handle local move and send to opponent
    */
-  const handleDrop = (sourceSquare: any, targetSquare: any) => {
-    // Make the move locally
+  const handleDrop = (sourceSquare: Square, targetSquare: Square) => {
+    if (roomStatus === 'playing') {
+      if (isPaused || isGameOver) return false;
+      if (!isOwnPiece(sourceSquare)) return false;
+    }
+
     const success = onDrop(sourceSquare, targetSquare);
     
-    // Send to server if successful
     if (success && roomId) {
-      // Mark this move as sent so we don't double-send via lastMove watcher
       lastSentMoveRef.current = { from: sourceSquare, to: targetSquare };
       sendMove({ from: sourceSquare, to: targetSquare });
     }
 
     return success;
+  };
+
+  /**
+   * Click-to-move: only select your own pieces in a live game
+   */
+  const handleSquareClick = (square: Square) => {
+    if (roomStatus === 'playing') {
+      if (isPaused || isGameOver) return;
+
+      const piece = game.get(square);
+      const isCaptureTarget = validMoves.includes(square);
+
+      if (piece && !isOwnPiece(square) && !isCaptureTarget) {
+        return;
+      }
+    }
+
+    onSquareClick(square);
+  };
+
+  const canDragPiece = (piece: string) => {
+    if (roomStatus !== 'playing' || !playerColor) return true;
+    if (isPaused || isGameOver) return false;
+    const pieceColor = piece.startsWith('w') ? 'white' : 'black';
+    return pieceColor === playerColor;
   };
 
   /**
@@ -279,7 +316,8 @@ const HomePage: FC = () => {
                       darkSquareColor={currentTheme?.colors.darkSquare}
                       lightSquareColor={currentTheme?.colors.lightSquare}
                       onDrop={handleDrop}
-                      onSquareClick={onSquareClick}
+                      onSquareClick={handleSquareClick}
+                      canDragPiece={canDragPiece}
                     />
                   </div>
                 </div>
