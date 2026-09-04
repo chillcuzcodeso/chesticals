@@ -24,13 +24,20 @@ export interface UseMultiplayerReturn {
   isConnected: boolean;
   opponentDisconnected: boolean;
   clockState: ClockState | null;
+  isPaused: boolean;
   createRoom: () => void;
   joinRoom: (roomId: string) => void;
   leaveRoom: () => void;
   sendMove: (move: Move) => void;
   sendClockPunch: (color: 'white' | 'black') => void;
+  sendThemeChange: (theme: any) => void;
+  pauseGame: () => void;
+  resumeGame: () => void;
   onOpponentMove: (callback: (move: Move) => void) => void;
   onClockUpdate: (callback: (clock: ClockState) => void) => void;
+  onThemeUpdate: (callback: (theme: any) => void) => void;
+  onGamePaused: (callback: () => void) => void;
+  onGameResumed: (callback: () => void) => void;
 }
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
@@ -43,9 +50,13 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
   const [isConnected, setIsConnected] = useState(false);
   const [opponentDisconnected, setOpponentDisconnected] = useState(false);
   const [clockState, setClockState] = useState<ClockState | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
   
   const opponentMoveCallbackRef = useRef<((move: Move) => void) | null>(null);
   const clockUpdateCallbackRef = useRef<((clock: ClockState) => void) | null>(null);
+  const themeUpdateCallbackRef = useRef<((theme: any) => void) | null>(null);
+  const gamePausedCallbackRef = useRef<(() => void) | null>(null);
+  const gameResumedCallbackRef = useRef<(() => void) | null>(null);
 
   /**
    * Initialize socket connection
@@ -94,6 +105,29 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
       setClockState(clock);
       if (clockUpdateCallbackRef.current) {
         clockUpdateCallbackRef.current(clock);
+      }
+    });
+
+    newSocket.on('theme-update', ({ theme }) => {
+      console.log('Theme updated:', theme);
+      if (themeUpdateCallbackRef.current) {
+        themeUpdateCallbackRef.current(theme);
+      }
+    });
+
+    newSocket.on('game-paused', () => {
+      console.log('Game paused by opponent');
+      setIsPaused(true);
+      if (gamePausedCallbackRef.current) {
+        gamePausedCallbackRef.current();
+      }
+    });
+
+    newSocket.on('game-resumed', () => {
+      console.log('Game resumed by opponent');
+      setIsPaused(false);
+      if (gameResumedCallbackRef.current) {
+        gameResumedCallbackRef.current();
       }
     });
 
@@ -197,10 +231,57 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
   }, []);
 
   /**
+   * Send theme change to server
+   */
+  const sendThemeChange = useCallback((theme: any) => {
+    if (!socket || !roomId) return;
+    socket.emit('theme-change', { roomId, theme });
+  }, [socket, roomId]);
+
+  /**
+   * Pause game
+   */
+  const pauseGame = useCallback(() => {
+    if (!socket || !roomId) return;
+    setIsPaused(true);
+    socket.emit('pause-game', { roomId });
+  }, [socket, roomId]);
+
+  /**
+   * Resume game
+   */
+  const resumeGame = useCallback(() => {
+    if (!socket || !roomId) return;
+    setIsPaused(false);
+    socket.emit('resume-game', { roomId });
+  }, [socket, roomId]);
+
+  /**
    * Register callback for clock updates
    */
   const onClockUpdate = useCallback((callback: (clock: ClockState) => void) => {
     clockUpdateCallbackRef.current = callback;
+  }, []);
+
+  /**
+   * Register callback for theme updates
+   */
+  const onThemeUpdate = useCallback((callback: (theme: any) => void) => {
+    themeUpdateCallbackRef.current = callback;
+  }, []);
+
+  /**
+   * Register callback for game paused
+   */
+  const onGamePaused = useCallback((callback: () => void) => {
+    gamePausedCallbackRef.current = callback;
+  }, []);
+
+  /**
+   * Register callback for game resumed
+   */
+  const onGameResumed = useCallback((callback: () => void) => {
+    gameResumedCallbackRef.current = callback;
   }, []);
 
   return {
@@ -211,12 +292,19 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
     isConnected,
     opponentDisconnected,
     clockState,
+    isPaused,
     createRoom,
     joinRoom,
     leaveRoom,
     sendMove,
     sendClockPunch,
+    sendThemeChange,
+    pauseGame,
+    resumeGame,
     onOpponentMove,
     onClockUpdate,
+    onThemeUpdate,
+    onGamePaused,
+    onGameResumed,
   };
 };

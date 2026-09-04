@@ -38,13 +38,20 @@ const HomePage: FC = () => {
     isConnected,
     opponentDisconnected,
     clockState,
+    isPaused,
     createRoom,
     joinRoom,
     leaveRoom,
     sendMove,
     sendClockPunch,
+    sendThemeChange,
+    pauseGame,
+    resumeGame,
     onOpponentMove,
     onClockUpdate,
+    onThemeUpdate,
+    onGamePaused,
+    onGameResumed,
   } = useMultiplayer();
 
   const {
@@ -109,10 +116,34 @@ const HomePage: FC = () => {
    */
   useEffect(() => {
     onClockUpdate((clock) => {
-      // Clock state is managed by server in multiplayer
       console.log('Clock synced from server:', clock);
     });
   }, [onClockUpdate]);
+
+  /**
+   * Register theme update handler
+   */
+  useEffect(() => {
+    onThemeUpdate((theme) => {
+      console.log('Theme synced from opponent:', theme);
+      // Apply opponent's theme
+      if (theme && theme.query) {
+        applyTheme(theme.query);
+      }
+    });
+  }, [onThemeUpdate, applyTheme]);
+
+  /**
+   * Register pause/resume handlers
+   */
+  useEffect(() => {
+    onGamePaused(() => {
+      console.log('Game paused by opponent');
+    });
+    onGameResumed(() => {
+      console.log('Game resumed by opponent');
+    });
+  }, [onGamePaused, onGameResumed]);
 
   /**
    * Start clock when game starts in multiplayer
@@ -162,7 +193,12 @@ const HomePage: FC = () => {
    * Handle theme search
    */
   const handleThemeSearch = async (query: string) => {
-    await applyTheme(query);
+    const newTheme = await applyTheme(query);
+    
+    // Sync theme with opponent if in multiplayer
+    if (roomStatus === 'playing' && currentTheme) {
+      sendThemeChange(currentTheme);
+    }
   };
 
   /**
@@ -320,13 +356,51 @@ const HomePage: FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Hidden Music Player */}
-        <MusicPlayer 
-          query={currentTheme?.query !== 'default' ? currentTheme?.query || null : null}
-          autoPlay={true}
-          isMuted={isMusicMuted}
-          onMuteChange={setIsMusicMuted}
-        />
+        {/* Pause Overlay */}
+        <AnimatePresence>
+          {isPaused && roomStatus === 'playing' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center"
+            >
+              <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                className="backdrop-blur-2xl bg-black/40 border border-white/20 rounded-2xl p-8 text-center"
+              >
+                <h2 className="text-3xl font-bold text-white mb-4">⏸️ Game Paused</h2>
+                <p className="text-slate-300 mb-6">Waiting for opponent...</p>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={resumeGame}
+                  className="backdrop-blur-xl bg-green-500/20 hover:bg-green-500/30 border border-green-400/30 rounded-xl px-8 py-3 text-white font-medium"
+                >
+                  Resume Game
+                </motion.button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Pause/Resume Button (only in multiplayer) */}
+        {roomStatus === 'playing' && !isGameOver && (
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={isPaused ? resumeGame : pauseGame}
+            className="fixed top-24 right-6 z-40 backdrop-blur-2xl bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white font-medium shadow-lg"
+          >
+            {isPaused ? '▶️ Resume' : '⏸️ Pause'}
+          </motion.button>
+        )}
+
+        {/* Music removed - YouTube embeds don't work reliably */}
       </div>
     </div>
   );

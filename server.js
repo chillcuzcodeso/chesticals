@@ -146,6 +146,36 @@ io.on('connection', (socket) => {
   });
 
   /**
+   * Handle theme change
+   */
+  socket.on('theme-change', ({ roomId, theme }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    console.log(`Theme changed in room ${roomId}`);
+    
+    // Broadcast theme to all players in room
+    io.to(roomId).emit('theme-update', { theme });
+  });
+
+  /**
+   * Handle game pause/resume
+   */
+  socket.on('pause-game', ({ roomId }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    socket.to(roomId).emit('game-paused');
+  });
+
+  socket.on('resume-game', ({ roomId }) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    socket.to(roomId).emit('game-resumed');
+  });
+
+  /**
    * Handle clock punch
    */
   socket.on('punch-clock', ({ roomId, color }) => {
