@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import "react-chessboard/dist/chessboard.min.css";
 
 export const metadata: Metadata = {
   title: "Chesticals - Real-time Multiplayer Chess",
