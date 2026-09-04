@@ -83,6 +83,8 @@ const HomePage: FC = () => {
    * Handle local move and send to opponent
    */
   const handleDrop = (sourceSquare: any, targetSquare: any) => {
+    console.log('🎯 handleDrop called:', { sourceSquare, targetSquare, roomStatus, playerColor });
+    
     // Check if it's player's turn in multiplayer
     if (roomStatus === 'playing' && playerColor) {
       const isPlayerTurn = 
@@ -90,15 +92,18 @@ const HomePage: FC = () => {
         (currentTurn === 'b' && playerColor === 'black');
       
       if (!isPlayerTurn) {
+        console.log('❌ Not player turn');
         return false; // Not player's turn
       }
     }
 
     // Make the move locally
     const success = onDrop(sourceSquare, targetSquare);
+    console.log('✅ Move success:', success);
 
     // If move succeeded and in multiplayer, send to opponent
     if (success && roomStatus === 'playing') {
+      console.log('📤 Sending move to opponent:', { from: sourceSquare, to: targetSquare });
       sendMove({ from: sourceSquare, to: targetSquare });
     }
 
@@ -110,7 +115,9 @@ const HomePage: FC = () => {
    */
   useEffect(() => {
     onOpponentMove((move) => {
-      makeMove(move.from, move.to);
+      console.log('📥 Received opponent move:', move);
+      const success = makeMove(move.from, move.to);
+      console.log('✅ Applied opponent move:', success);
     });
   }, [onOpponentMove, makeMove]);
 
