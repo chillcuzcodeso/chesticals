@@ -88,7 +88,7 @@ const HomePage: FC = () => {
    * Handle local move and send to opponent
    */
   const handleDrop = (sourceSquare: any, targetSquare: any) => {
-    alert(`MOVE ATTEMPT: ${sourceSquare} to ${targetSquare}`);
+    alert(`MOVE ATTEMPT: ${sourceSquare} → ${targetSquare}\nPlayer: ${playerColor}\nRoom: ${roomId}`);
     
     // Make the move locally (NO validation for now)
     const success = onDrop(sourceSquare, targetSquare);
@@ -97,10 +97,11 @@ const HomePage: FC = () => {
     
     // ALWAYS send to server if successful
     if (success && roomId) {
-      alert(`Sending to server! Room: ${roomId}`);
+      alert(`📤 SENDING TO SERVER!\nRoom: ${roomId}\nMove: ${sourceSquare}→${targetSquare}\nSocket connected: ${isConnected}`);
       sendMove({ from: sourceSquare, to: targetSquare });
+      alert(`✅ sendMove() called!`);
     } else {
-      alert(`NOT SENDING! success=${success}, roomId=${roomId}`);
+      alert(`❌ NOT SENDING!\nsuccess=${success}\nroomId=${roomId}`);
     }
 
     return success;

@@ -122,9 +122,12 @@ io.on('connection', (socket) => {
    * Handle move from a player
    */
   socket.on('move', ({ roomId, move }) => {
+    console.log(`🎯 SERVER RECEIVED MOVE:`, { roomId, move, socketId: socket.id });
+    
     const room = rooms.get(roomId);
 
     if (!room) {
+      console.log(`❌ Room ${roomId} not found!`);
       socket.emit('error', { message: 'Room not found' });
       return;
     }
@@ -132,17 +135,22 @@ io.on('connection', (socket) => {
     // Verify player is in the room
     const player = room.players.find(p => p.id === socket.id);
     if (!player) {
+      console.log(`❌ Player ${socket.id} not in room ${roomId}!`);
+      console.log(`Room players:`, room.players.map(p => ({ id: p.id, color: p.color })));
       socket.emit('error', { message: 'Player not in room' });
       return;
     }
 
-    console.log(`Move in room ${roomId}:`, move);
+    console.log(`✅ Move in room ${roomId} from ${player.color}:`, move);
+    console.log(`📤 Broadcasting to room ${roomId} (${room.players.length} players)`);
 
     // Broadcast move to opponent
     socket.to(roomId).emit('opponent-move', {
       move,
       from: player.color,
     });
+    
+    console.log(`✅ Emitted opponent-move to room ${roomId}`);
   });
 
   /**
