@@ -6,7 +6,6 @@ import { ChessBoard } from '@/components/chess/ChessBoard';
 import { ChessClock } from '@/components/chess/ChessClock';
 import { RoomControls } from '@/components/ui/RoomControls';
 import { ThemeSearch } from '@/components/ui/ThemeSearch';
-import { MusicPlayer } from '@/components/ui/MusicPlayer';
 import { HUD } from '@/components/ui/HUD';
 import { useChessGame } from '@/hooks/useChessGame';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
@@ -193,12 +192,14 @@ const HomePage: FC = () => {
    * Handle theme search
    */
   const handleThemeSearch = async (query: string) => {
-    const newTheme = await applyTheme(query);
+    await applyTheme(query);
     
-    // Sync theme with opponent if in multiplayer
-    if (roomStatus === 'playing' && currentTheme) {
-      sendThemeChange(currentTheme);
-    }
+    // Sync theme with opponent if in multiplayer (after theme is applied)
+    setTimeout(() => {
+      if (roomStatus === 'playing' && currentTheme) {
+        sendThemeChange(currentTheme);
+      }
+    }, 500);
   };
 
   /**
