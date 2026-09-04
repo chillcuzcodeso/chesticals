@@ -161,9 +161,9 @@ io.on('connection', (socket) => {
     if (!room) return;
 
     console.log(`Theme changed in room ${roomId}`);
-    
-    // Broadcast theme to all players in room
-    io.to(roomId).emit('theme-update', { theme });
+
+    // Send only to the opponent — echoing back caused the chooser to re-fetch
+    socket.to(roomId).emit('theme-update', { theme });
   });
 
   /**

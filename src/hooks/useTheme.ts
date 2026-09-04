@@ -20,7 +20,8 @@ export interface UseThemeReturn {
   currentTheme: ThemeData | null;
   isLoading: boolean;
   error: string | null;
-  applyTheme: (query: string) => Promise<void>;
+  applyTheme: (query: string) => Promise<ThemeData | null>;
+  applyRemoteTheme: (theme: ThemeData) => void;
   resetTheme: () => void;
 }
 
@@ -45,8 +46,8 @@ export const useTheme = (): UseThemeReturn => {
   /**
    * Apply a new theme by fetching from API
    */
-  const applyTheme = useCallback(async (query: string) => {
-    if (!query.trim()) return;
+  const applyTheme = useCallback(async (query: string): Promise<ThemeData | null> => {
+    if (!query.trim()) return null;
 
     setIsLoading(true);
     setError(null);
@@ -65,17 +66,30 @@ export const useTheme = (): UseThemeReturn => {
       }
 
       const themeData: ThemeData = await response.json();
-      
-      // Smooth transition by updating state
       setCurrentTheme(themeData);
-      
-      console.log('Theme applied:', themeData);
+      return themeData;
     } catch (err) {
       console.error('Theme error:', err);
       setError(err instanceof Error ? err.message : 'Failed to apply theme');
+      return null;
     } finally {
       setIsLoading(false);
     }
+  }, []);
+
+  /**
+   * Apply a theme payload from the opponent without re-fetching Unsplash
+   */
+  const applyRemoteTheme = useCallback((theme: ThemeData) => {
+    if (!theme) return;
+
+    if (!theme.imageUrl || theme.query === 'default') {
+      setCurrentTheme(DEFAULT_THEME);
+      return;
+    }
+
+    setCurrentTheme(theme);
+    setError(null);
   }, []);
 
   /**
@@ -91,6 +105,7 @@ export const useTheme = (): UseThemeReturn => {
     isLoading,
     error,
     applyTheme,
+    applyRemoteTheme,
     resetTheme,
   };
 };

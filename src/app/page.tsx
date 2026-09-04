@@ -58,6 +58,7 @@ const HomePage: FC = () => {
     isLoading: themeLoading,
     error: themeError,
     applyTheme,
+    applyRemoteTheme,
     resetTheme,
   } = useTheme();
 
@@ -109,13 +110,9 @@ const HomePage: FC = () => {
    */
   useEffect(() => {
     onThemeUpdate((theme) => {
-      console.log('Theme synced from opponent:', theme);
-      // Apply opponent's theme
-      if (theme && theme.query) {
-        applyTheme(theme.query);
-      }
+      applyRemoteTheme(theme);
     });
-  }, [onThemeUpdate, applyTheme]);
+  }, [onThemeUpdate, applyRemoteTheme]);
 
   /**
    * Register pause/resume handlers
@@ -165,14 +162,12 @@ const HomePage: FC = () => {
    * Handle theme search
    */
   const handleThemeSearch = async (query: string) => {
-    await applyTheme(query);
-    
-    // Sync theme with opponent if in multiplayer (after theme is applied)
-    setTimeout(() => {
-      if (roomStatus === 'playing' && currentTheme) {
-        sendThemeChange(currentTheme);
-      }
-    }, 500);
+    const theme = await applyTheme(query);
+
+    // Send the exact image + colors so the opponent does not re-fetch Unsplash
+    if (theme && roomStatus === 'playing') {
+      sendThemeChange(theme);
+    }
   };
 
   /**
@@ -180,6 +175,20 @@ const HomePage: FC = () => {
    */
   const handleThemeReset = () => {
     resetTheme();
+    if (roomStatus === 'playing') {
+      sendThemeChange({
+        imageUrl: '',
+        query: 'default',
+        colors: {
+          darkSquare: '#739552',
+          lightSquare: '#ebecd0',
+          background: 'linear-gradient(to bottom right, rgb(2, 6, 23), rgb(15, 23, 42), rgb(2, 6, 23))',
+          accent: '#3b82f6',
+          vibrant: '#60a5fa',
+          muted: '#94a3b8',
+        },
+      });
+    }
   };
 
   /**
