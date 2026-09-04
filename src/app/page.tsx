@@ -407,18 +407,32 @@ const HomePage: FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Pause/Resume Button (only in multiplayer) */}
-        {roomStatus === 'playing' && !isGameOver && (
-          <motion.button
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={isPaused ? resumeGame : pauseGame}
-            className="fixed top-24 right-6 z-40 backdrop-blur-2xl bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white font-medium shadow-lg"
-          >
-            {isPaused ? '▶️ Resume' : '⏸️ Pause'}
-          </motion.button>
+        {/* Game Controls (only in multiplayer) */}
+        {roomStatus === 'playing' && (
+          <div className="fixed top-24 right-6 z-40 flex flex-col gap-2">
+            {!isGameOver && (
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={isPaused ? resumeGame : pauseGame}
+                className="backdrop-blur-2xl bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-white font-medium shadow-lg"
+              >
+                {isPaused ? '▶️ Resume' : '⏸️ Pause'}
+              </motion.button>
+            )}
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleGameReset}
+              className="backdrop-blur-2xl bg-orange-500/20 hover:bg-orange-500/30 border border-orange-400/30 rounded-xl px-4 py-2 text-white font-medium shadow-lg"
+            >
+              🔄 Reset
+            </motion.button>
+          </div>
         )}
 
         {/* Music removed - YouTube embeds don't work reliably */}
