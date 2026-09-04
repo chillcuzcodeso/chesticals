@@ -70,14 +70,24 @@ export const ChessBoard: FC<ChessBoardProps> = ({
   }, [validMoves, lastMove, game]);
 
   return (
-    <div className="w-full" style={{ aspectRatio: '1/1' }}>
+    <div 
+      className="w-full bg-red-500" 
+      style={{ 
+        aspectRatio: '1/1',
+        minHeight: '400px',
+        border: '5px solid yellow'
+      }}
+    >
+      <p className="text-white text-2xl">BOARD SHOULD BE HERE</p>
+      <p className="text-white">Position: {position}</p>
       <Chessboard
+        id="main-chessboard"
         position={position}
         onPieceDrop={onDrop}
         onSquareClick={onSquareClick}
         boardOrientation={orientation}
         customSquareStyles={customSquareStyles}
-        boardWidth={600} // Set explicit width
+        boardWidth={600}
         customBoardStyle={{
           borderRadius: '12px',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',
