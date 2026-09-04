@@ -90,10 +90,13 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
       }
     });
 
-    newSocket.on('opponent-move', ({ move }) => {
-      console.log('Received opponent move:', move);
+    newSocket.on('opponent-move', ({ move, from: moveFrom }) => {
+      console.log('📥 SOCKET: Received opponent-move event:', { move, from: moveFrom });
       if (opponentMoveCallbackRef.current) {
+        console.log('📥 Calling opponent move callback with:', move);
         opponentMoveCallbackRef.current(move);
+      } else {
+        console.log('⚠️ No opponent move callback registered!');
       }
     });
 

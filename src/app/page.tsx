@@ -83,28 +83,47 @@ const HomePage: FC = () => {
    * Handle local move and send to opponent
    */
   const handleDrop = (sourceSquare: any, targetSquare: any) => {
-    console.log('🎯 handleDrop called:', { sourceSquare, targetSquare, roomStatus, playerColor });
+    console.log('🎯 handleDrop called:', { 
+      sourceSquare, 
+      targetSquare, 
+      roomStatus, 
+      playerColor, 
+      currentTurn,
+      roomId 
+    });
     
-    // Check if it's player's turn in multiplayer
+    // In multiplayer, ONLY allow moves on your turn
     if (roomStatus === 'playing' && playerColor) {
       const isPlayerTurn = 
         (currentTurn === 'w' && playerColor === 'white') ||
         (currentTurn === 'b' && playerColor === 'black');
       
+      console.log('Turn check:', { isPlayerTurn, currentTurn, playerColor });
+      
       if (!isPlayerTurn) {
-        console.log('❌ Not player turn');
-        return false; // Not player's turn
+        console.log('❌ Not your turn! Blocking move.');
+        return false;
       }
     }
 
     // Make the move locally
     const success = onDrop(sourceSquare, targetSquare);
-    console.log('✅ Move success:', success);
+    console.log('✅ Local move result:', success);
 
-    // If move succeeded and in multiplayer, send to opponent
-    if (success && roomStatus === 'playing') {
-      console.log('📤 Sending move to opponent:', { from: sourceSquare, to: targetSquare });
-      sendMove({ from: sourceSquare, to: targetSquare });
+    // CRITICAL: Send move to opponent via Socket.io
+    if (success) {
+      console.log('📤 Attempting to send move...');
+      console.log('Room status:', roomStatus);
+      console.log('Room ID:', roomId);
+      console.log('Socket connected:', isConnected);
+      
+      if (roomStatus === 'playing' && roomId) {
+        const moveData = { from: sourceSquare, to: targetSquare };
+        console.log('📤 SENDING MOVE TO SERVER:', moveData);
+        sendMove(moveData);
+      } else {
+        console.log('⚠️ NOT IN PLAYING STATE - Move not sent!');
+      }
     }
 
     return success;
