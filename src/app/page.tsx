@@ -83,47 +83,19 @@ const HomePage: FC = () => {
    * Handle local move and send to opponent
    */
   const handleDrop = (sourceSquare: any, targetSquare: any) => {
-    console.log('🎯 handleDrop called:', { 
-      sourceSquare, 
-      targetSquare, 
-      roomStatus, 
-      playerColor, 
-      currentTurn,
-      roomId 
-    });
+    alert(`MOVE ATTEMPT: ${sourceSquare} to ${targetSquare}`);
     
-    // In multiplayer, ONLY allow moves on your turn
-    if (roomStatus === 'playing' && playerColor) {
-      const isPlayerTurn = 
-        (currentTurn === 'w' && playerColor === 'white') ||
-        (currentTurn === 'b' && playerColor === 'black');
-      
-      console.log('Turn check:', { isPlayerTurn, currentTurn, playerColor });
-      
-      if (!isPlayerTurn) {
-        console.log('❌ Not your turn! Blocking move.');
-        return false;
-      }
-    }
-
-    // Make the move locally
+    // Make the move locally (NO validation for now)
     const success = onDrop(sourceSquare, targetSquare);
-    console.log('✅ Local move result:', success);
-
-    // CRITICAL: Send move to opponent via Socket.io
-    if (success) {
-      console.log('📤 Attempting to send move...');
-      console.log('Room status:', roomStatus);
-      console.log('Room ID:', roomId);
-      console.log('Socket connected:', isConnected);
-      
-      if (roomStatus === 'playing' && roomId) {
-        const moveData = { from: sourceSquare, to: targetSquare };
-        console.log('📤 SENDING MOVE TO SERVER:', moveData);
-        sendMove(moveData);
-      } else {
-        console.log('⚠️ NOT IN PLAYING STATE - Move not sent!');
-      }
+    
+    alert(`Move success: ${success}`);
+    
+    // ALWAYS send to server if successful
+    if (success && roomId) {
+      alert(`Sending to server! Room: ${roomId}`);
+      sendMove({ from: sourceSquare, to: targetSquare });
+    } else {
+      alert(`NOT SENDING! success=${success}, roomId=${roomId}`);
     }
 
     return success;
@@ -134,9 +106,9 @@ const HomePage: FC = () => {
    */
   useEffect(() => {
     onOpponentMove((move) => {
-      console.log('📥 Received opponent move:', move);
+      alert(`RECEIVED OPPONENT MOVE: ${move.from} to ${move.to}`);
       const success = makeMove(move.from, move.to);
-      console.log('✅ Applied opponent move:', success);
+      alert(`Applied opponent move: ${success}`);
     });
   }, [onOpponentMove, makeMove]);
 

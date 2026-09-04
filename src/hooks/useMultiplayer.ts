@@ -217,12 +217,24 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
    * Send a move to the opponent
    */
   const sendMove = useCallback((move: Move) => {
-    if (!socket || !roomId) return;
+    console.log('📤 sendMove called:', { socket: !!socket, roomId, move });
+    
+    if (!socket) {
+      console.log('❌ No socket connection!');
+      return;
+    }
+    
+    if (!roomId) {
+      console.log('❌ No room ID!');
+      return;
+    }
 
+    console.log('📤 Emitting move event to server:', { roomId, move });
     socket.emit('move', {
       roomId,
       move,
     });
+    console.log('📤 Move event emitted!');
   }, [socket, roomId]);
 
   /**
