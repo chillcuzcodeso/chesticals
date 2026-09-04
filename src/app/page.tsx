@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Square } from 'chess.js';
 import { ChessBoard } from '@/components/chess/ChessBoard';
@@ -19,6 +19,9 @@ const HomePage: FC = () => {
   useEffect(() => {
     alert('🚀 NEW CODE LOADED! Version 9:08 PM - If you see this, the code updated!');
   }, []);
+
+  // Track if the last move was sent (to avoid double-sending)
+  const lastSentMoveRef = useRef<{from: string, to: string} | null>(null);
 
   const [timeExpiredWinner, setTimeExpiredWinner] = useState<string | null>(null);
   const [isMusicMuted, setIsMusicMuted] = useState(false);
@@ -98,6 +101,9 @@ const HomePage: FC = () => {
     
     // ALWAYS send to server if successful
     if (success && roomId) {
+      // Mark this move as sent so we don't double-send via lastMove watcher
+      lastSentMoveRef.current = { from: sourceSquare, to: targetSquare };
+      
       alert(`📤 SENDING TO SERVER!\nRoom: ${roomId}\nMove: ${sourceSquare}→${targetSquare}\nSocket connected: ${isConnected}`);
       sendMove({ from: sourceSquare, to: targetSquare });
       alert(`✅ sendMove() called!`);
@@ -109,23 +115,22 @@ const HomePage: FC = () => {
   };
 
   /**
-   * Wrap onSquareClick to detect click-moves and sync them
+   * Watch for moves made via click (not drag) and send them
    */
-  const handleSquareClick = (square: Square) => {
-    const oldPosition = position;
+  useEffect(() => {
+    if (!lastMove || !roomId || roomStatus !== 'playing') return;
     
-    // Call the original click handler
-    onSquareClick(square);
+    // Check if this move was already sent (via drag-drop)
+    const alreadySent = 
+      lastSentMoveRef.current?.from === lastMove.from &&
+      lastSentMoveRef.current?.to === lastMove.to;
     
-    // Check if position changed (move was made)
-    // Use setTimeout to check after state updates
-    setTimeout(() => {
-      if (position !== oldPosition && lastMove && roomId) {
-        alert(`📤 CLICK MOVE DETECTED: ${lastMove.from}→${lastMove.to}`);
-        sendMove({ from: lastMove.from, to: lastMove.to });
-      }
-    }, 10);
-  };
+    if (!alreadySent) {
+      alert(`📤 CLICK MOVE DETECTED: ${lastMove.from}→${lastMove.to}`);
+      lastSentMoveRef.current = lastMove;
+      sendMove({ from: lastMove.from, to: lastMove.to });
+    }
+  }, [lastMove, roomId, roomStatus, sendMove]);
 
   /**
    * Register opponent move handler
@@ -354,7 +359,7 @@ const HomePage: FC = () => {
                       darkSquareColor={currentTheme?.colors.darkSquare}
                       lightSquareColor={currentTheme?.colors.lightSquare}
                       onDrop={handleDrop}
-                      onSquareClick={handleSquareClick}
+                      onSquareClick={onSquareClick}
                     />
                   </div>
                 </div>
