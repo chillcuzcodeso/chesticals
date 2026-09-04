@@ -2,6 +2,7 @@
 
 import { FC, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Square } from 'chess.js';
 import { ChessBoard } from '@/components/chess/ChessBoard';
 import { ChessClock } from '@/components/chess/ChessClock';
 import { CapturedPieces } from '@/components/chess/CapturedPieces';
@@ -105,6 +106,25 @@ const HomePage: FC = () => {
     }
 
     return success;
+  };
+
+  /**
+   * Wrap onSquareClick to detect click-moves and sync them
+   */
+  const handleSquareClick = (square: Square) => {
+    const oldPosition = position;
+    
+    // Call the original click handler
+    onSquareClick(square);
+    
+    // Check if position changed (move was made)
+    // Use setTimeout to check after state updates
+    setTimeout(() => {
+      if (position !== oldPosition && lastMove && roomId) {
+        alert(`📤 CLICK MOVE DETECTED: ${lastMove.from}→${lastMove.to}`);
+        sendMove({ from: lastMove.from, to: lastMove.to });
+      }
+    }, 10);
   };
 
   /**
@@ -334,7 +354,7 @@ const HomePage: FC = () => {
                       darkSquareColor={currentTheme?.colors.darkSquare}
                       lightSquareColor={currentTheme?.colors.lightSquare}
                       onDrop={handleDrop}
-                      onSquareClick={onSquareClick}
+                      onSquareClick={handleSquareClick}
                     />
                   </div>
                 </div>
