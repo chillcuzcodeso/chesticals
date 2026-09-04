@@ -19,6 +19,7 @@ export interface UseChessGameReturn {
   isGameOver: boolean;
   result: string | null;
   currentTurn: 'w' | 'b';
+  isCheckmate: boolean;
   capturedPieces: CapturedPieces;
   onDrop: (sourceSquare: Square, targetSquare: Square) => boolean;
   onSquareClick: (square: Square) => void;
@@ -194,6 +195,7 @@ export const useChessGame = (): UseChessGameReturn => {
         : 'Game over'
       : null,
     capturedPieces,
+    isCheckmate: game.isCheckmate(),
     onDrop,
     onSquareClick,
     makeMove,

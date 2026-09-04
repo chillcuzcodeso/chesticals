@@ -2,7 +2,7 @@
 
 import { FC } from 'react';
 import { motion } from 'framer-motion';
-import { Wifi, WifiOff, Copy, Volume2, VolumeX, Check } from 'lucide-react';
+import { Wifi, WifiOff, Copy, Volume2, VolumeX, Check, Users } from 'lucide-react';
 import { useState } from 'react';
 
 interface HUDProps {
@@ -10,6 +10,7 @@ interface HUDProps {
   roomId: string | null;
   playerColor: 'white' | 'black' | null;
   isMusicMuted: boolean;
+  onlineCount: number;
   onMusicToggle: () => void;
 }
 
@@ -18,6 +19,7 @@ export const HUD: FC<HUDProps> = ({
   roomId,
   playerColor,
   isMusicMuted,
+  onlineCount,
   onMusicToggle,
 }) => {
   const [copied, setCopied] = useState(false);
@@ -39,6 +41,17 @@ export const HUD: FC<HUDProps> = ({
     >
       <div className="rounded-xl border border-white/10 bg-black/40 p-2 shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] backdrop-blur-2xl sm:rounded-2xl sm:p-4">
         <div className="flex items-center gap-2 sm:gap-4">
+          {/* Online count */}
+          <div className="flex items-center gap-1.5">
+            <Users className="h-4 w-4 text-blue-300" />
+            <span className="text-xs font-medium text-slate-200">
+              {onlineCount}
+            </span>
+            <span className="hidden text-xs text-slate-400 sm:inline">online</span>
+          </div>
+
+          <div className="h-6 w-px bg-white/10" />
+
           {/* Connection Status */}
           <motion.div
             className="flex items-center gap-2"

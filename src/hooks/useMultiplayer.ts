@@ -5,6 +5,14 @@ import { Square } from 'chess.js';
 export type PlayerColor = 'white' | 'black' | null;
 export type RoomStatus = 'idle' | 'waiting' | 'playing' | 'finished';
 
+export interface ChatMessage {
+  id: string;
+  text: string;
+  from: 'white' | 'black';
+  self: boolean;
+  timestamp: number;
+}
+
 interface Move {
   from: Square;
   to: Square;
@@ -25,10 +33,16 @@ export interface UseMultiplayerReturn {
   opponentDisconnected: boolean;
   clockState: ClockState | null;
   isPaused: boolean;
+  onlineCount: number;
+  isSearching: boolean;
+  chatMessages: ChatMessage[];
   createRoom: () => void;
   joinRoom: (roomId: string) => void;
   leaveRoom: () => void;
+  findGame: () => void;
+  cancelFindGame: () => void;
   sendMove: (move: Move) => void;
+  sendChat: (text: string) => void;
   sendClockPunch: (color: 'white' | 'black') => void;
   sendThemeChange: (theme: any) => void;
   pauseGame: () => void;
@@ -40,6 +54,7 @@ export interface UseMultiplayerReturn {
   onGamePaused: (callback: () => void) => void;
   onGameResumed: (callback: () => void) => void;
   onGameReset: (callback: () => void) => void;
+  onMatchFound: (callback: () => void) => void;
 }
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
@@ -53,6 +68,9 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
   const [opponentDisconnected, setOpponentDisconnected] = useState(false);
   const [clockState, setClockState] = useState<ClockState | null>(null);
   const [isPaused, setIsPaused] = useState(false);
+  const [onlineCount, setOnlineCount] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   
   const opponentMoveCallbackRef = useRef<((move: Move) => void) | null>(null);
   const clockUpdateCallbackRef = useRef<((clock: ClockState) => void) | null>(null);
@@ -60,6 +78,7 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
   const gamePausedCallbackRef = useRef<(() => void) | null>(null);
   const gameResumedCallbackRef = useRef<(() => void) | null>(null);
   const gameResetCallbackRef = useRef<(() => void) | null>(null);
+  const matchFoundCallbackRef = useRef<(() => void) | null>(null);
 
   /**
    * Initialize socket connection
@@ -77,6 +96,40 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
     newSocket.on('disconnect', () => {
       console.log('Disconnected from server');
       setIsConnected(false);
+    });
+
+    newSocket.on('online-count', ({ count }: { count: number }) => {
+      setOnlineCount(count);
+    });
+
+    newSocket.on('matchmaking-status', ({ searching }: { searching: boolean }) => {
+      setIsSearching(searching);
+    });
+
+    newSocket.on('match-found', ({ roomId: foundRoomId, color }) => {
+      console.log('Match found:', foundRoomId, color);
+      setRoomId(foundRoomId);
+      setPlayerColor(color);
+      setRoomStatus('playing');
+      setIsSearching(false);
+      setOpponentDisconnected(false);
+      setChatMessages([]);
+      if (matchFoundCallbackRef.current) {
+        matchFoundCallbackRef.current();
+      }
+    });
+
+    newSocket.on('chat-message', (payload) => {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: payload.id,
+          text: payload.text,
+          from: payload.from,
+          self: payload.senderId === newSocket.id,
+          timestamp: payload.timestamp,
+        },
+      ]);
     });
 
     newSocket.on('game-start', ({ players, clock }) => {
@@ -174,6 +227,8 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
         setPlayerColor(response.color);
         setRoomStatus('waiting');
         setOpponentDisconnected(false);
+        setIsSearching(false);
+        setChatMessages([]);
       } else {
         console.error('Failed to create room:', response.error);
       }
@@ -193,6 +248,8 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
         setPlayerColor(response.color);
         setRoomStatus('playing');
         setOpponentDisconnected(false);
+        setIsSearching(false);
+        setChatMessages([]);
       } else {
         console.error('Failed to join room:', response.error);
         alert(`Failed to join room: ${response.error}`);
@@ -211,11 +268,26 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
     setPlayerColor(null);
     setRoomStatus('idle');
     setOpponentDisconnected(false);
+    setIsSearching(false);
+    setChatMessages([]);
   }, [socket, roomId]);
 
-  /**
-   * Send a move to the opponent
-   */
+  const sendChat = useCallback((text: string) => {
+    if (!socket || !roomId) return;
+    socket.emit('chat-message', { roomId, text });
+  }, [socket, roomId]);
+
+  const findGame = useCallback(() => {
+    if (!socket) return;
+    setIsSearching(true);
+    socket.emit('find-game');
+  }, [socket]);
+
+  const cancelFindGame = useCallback(() => {
+    if (!socket) return;
+    setIsSearching(false);
+    socket.emit('cancel-find-game');
+  }, [socket]);
   const sendMove = useCallback((move: Move) => {
     console.log('📤 sendMove called:', { socket: !!socket, roomId, move });
     
@@ -325,6 +397,10 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
     gameResetCallbackRef.current = callback;
   }, []);
 
+  const onMatchFound = useCallback((callback: () => void) => {
+    matchFoundCallbackRef.current = callback;
+  }, []);
+
   return {
     socket,
     roomId,
@@ -334,10 +410,16 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
     opponentDisconnected,
     clockState,
     isPaused,
+    onlineCount,
+    isSearching,
+    chatMessages,
     createRoom,
     joinRoom,
     leaveRoom,
+    findGame,
+    cancelFindGame,
     sendMove,
+    sendChat,
     sendClockPunch,
     sendThemeChange,
     pauseGame,
@@ -349,5 +431,6 @@ export const useMultiplayer = (): UseMultiplayerReturn => {
     onGamePaused,
     onGameResumed,
     onGameReset,
+    onMatchFound,
   };
 };

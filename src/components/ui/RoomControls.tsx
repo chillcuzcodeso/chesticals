@@ -2,7 +2,7 @@
 
 import { FC, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Copy, Users, LogOut } from 'lucide-react';
+import { Users, LogOut, Swords, Loader2 } from 'lucide-react';
 import { RoomStatus, PlayerColor } from '@/hooks/useMultiplayer';
 
 interface RoomControlsProps {
@@ -18,6 +18,9 @@ interface RoomControlsProps {
   onJoinRoom: (roomId: string) => void;
   onLeaveRoom: () => void;
   onResetGame: () => void;
+  isSearching?: boolean;
+  onFindGame?: () => void;
+  onCancelFindGame?: () => void;
 }
 
 export const RoomControls: FC<RoomControlsProps> = ({
@@ -33,17 +36,11 @@ export const RoomControls: FC<RoomControlsProps> = ({
   onJoinRoom,
   onLeaveRoom,
   onResetGame,
+  isSearching = false,
+  onFindGame,
+  onCancelFindGame,
 }) => {
   const [joinRoomInput, setJoinRoomInput] = useState('');
-  const [copied, setCopied] = useState(false);
-
-  const handleCopyRoomId = () => {
-    if (roomId) {
-      navigator.clipboard.writeText(roomId);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
 
   const handleJoinRoom = () => {
     if (joinRoomInput.trim()) {
@@ -64,6 +61,38 @@ export const RoomControls: FC<RoomControlsProps> = ({
           <h2 className="text-white text-xl font-bold mb-6 text-center">
             Multiplayer Mode
           </h2>
+
+          {isSearching ? (
+            <div className="mb-4 text-center">
+              <Loader2 className="mx-auto mb-3 h-8 w-8 animate-spin text-blue-400" />
+              <p className="mb-4 text-sm text-slate-300">Finding an opponent...</p>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={onCancelFindGame}
+                className="w-full rounded-xl border border-white/20 bg-white/5 px-6 py-3 text-white"
+              >
+                Cancel
+              </motion.button>
+            </div>
+          ) : (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={onFindGame}
+              disabled={!isConnected}
+              className="mb-4 w-full rounded-xl border border-amber-400/30 bg-amber-500/20 px-6 py-3.5 font-medium text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Swords className="mr-2 inline-block h-5 w-5" />
+              Find Game
+            </motion.button>
+          )}
+
+          <div className="mb-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-white/10" />
+            <span className="text-[10px] uppercase tracking-wider text-slate-500">or</span>
+            <div className="h-px flex-1 bg-white/10" />
+          </div>
 
           {/* Create room */}
           <motion.button

@@ -20,6 +20,78 @@ const io = new Server(httpServer, {
 
 // Store active rooms
 const rooms = new Map();
+const matchQueue = [];
+
+const createEmptyRoom = () => ({
+  id: generateRoomId(),
+  players: [],
+  gameState: 'start',
+  status: 'waiting',
+  clock: {
+    whiteTime: 15 * 60 * 1000,
+    blackTime: 15 * 60 * 1000,
+    activeTimer: null,
+    lastUpdate: Date.now(),
+  },
+});
+
+const broadcastOnlineCount = () => {
+  io.emit('online-count', { count: io.engine.clientsCount });
+};
+
+const removeFromQueue = (socketId) => {
+  const index = matchQueue.indexOf(socketId);
+  if (index !== -1) {
+    matchQueue.splice(index, 1);
+  }
+};
+
+const tryMatchPlayers = () => {
+  while (matchQueue.length >= 2) {
+    const whiteId = matchQueue.shift();
+    const blackId = matchQueue.shift();
+    const whiteSocket = io.sockets.sockets.get(whiteId);
+    const blackSocket = io.sockets.sockets.get(blackId);
+
+    if (!whiteSocket || !blackSocket) {
+      if (whiteSocket) matchQueue.unshift(whiteId);
+      if (blackSocket) matchQueue.unshift(blackId);
+      break;
+    }
+
+    const room = createEmptyRoom();
+    room.players = [
+      { id: whiteId, color: 'white' },
+      { id: blackId, color: 'black' },
+    ];
+    room.status = 'playing';
+    room.clock.activeTimer = 'white';
+    room.clock.lastUpdate = Date.now();
+    rooms.set(room.id, room);
+
+    whiteSocket.join(room.id);
+    blackSocket.join(room.id);
+
+    whiteSocket.emit('match-found', {
+      roomId: room.id,
+      color: 'white',
+      status: 'playing',
+    });
+    blackSocket.emit('match-found', {
+      roomId: room.id,
+      color: 'black',
+      status: 'playing',
+    });
+
+    io.to(room.id).emit('game-start', {
+      players: room.players,
+      gameState: room.gameState,
+      clock: room.clock,
+    });
+
+    console.log(`Match found: ${room.id} (${whiteId} vs ${blackId})`);
+  }
+};
 
 /**
  * Room structure:
@@ -28,44 +100,30 @@ const rooms = new Map();
  *   players: [{ id: string, color: 'white' | 'black' }],
  *   gameState: string (FEN),
  *   status: 'waiting' | 'playing' | 'finished',
- *   clock: {
- *     whiteTime: number,
- *     blackTime: number,
- *     activeTimer: 'white' | 'black' | null,
- *     lastUpdate: number
- *   }
+ *   clock: { ... }
  * }
  */
 
 io.on('connection', (socket) => {
   console.log(`Player connected: ${socket.id}`);
+  broadcastOnlineCount();
 
   /**
    * Create a new room
    */
   socket.on('create-room', (callback) => {
-    const roomId = generateRoomId();
-    const room = {
-      id: roomId,
-      players: [{ id: socket.id, color: 'white' }],
-      gameState: 'start',
-      status: 'waiting',
-      clock: {
-        whiteTime: 15 * 60 * 1000, // 15 minutes
-        blackTime: 15 * 60 * 1000,
-        activeTimer: null,
-        lastUpdate: Date.now(),
-      },
-    };
+    removeFromQueue(socket.id);
+    const room = createEmptyRoom();
+    room.players = [{ id: socket.id, color: 'white' }];
 
-    rooms.set(roomId, room);
-    socket.join(roomId);
+    rooms.set(room.id, room);
+    socket.join(room.id);
 
-    console.log(`Room created: ${roomId}`);
+    console.log(`Room created: ${room.id}`);
     
     callback({
       success: true,
-      roomId,
+      roomId: room.id,
       color: 'white',
       status: 'waiting',
     });
@@ -75,6 +133,7 @@ io.on('connection', (socket) => {
    * Join an existing room
    */
   socket.on('join-room', (roomId, callback) => {
+    removeFromQueue(socket.id);
     const room = rooms.get(roomId);
 
     if (!room) {
@@ -154,8 +213,43 @@ io.on('connection', (socket) => {
   });
 
   /**
-   * Handle theme change
+   * Matchmaking queue
    */
+  socket.on('find-game', () => {
+    if (matchQueue.includes(socket.id)) return;
+    removeFromQueue(socket.id);
+    matchQueue.push(socket.id);
+    socket.emit('matchmaking-status', { searching: true, queued: matchQueue.length });
+    console.log(`Player ${socket.id} searching. Queue: ${matchQueue.length}`);
+    tryMatchPlayers();
+  });
+
+  socket.on('cancel-find-game', () => {
+    removeFromQueue(socket.id);
+    socket.emit('matchmaking-status', { searching: false, queued: matchQueue.length });
+  });
+
+  /**
+   * In-game chat
+   */
+  socket.on('chat-message', ({ roomId, text }) => {
+    const room = rooms.get(roomId);
+    if (!room || typeof text !== 'string') return;
+
+    const player = room.players.find(p => p.id === socket.id);
+    if (!player) return;
+
+    const message = text.trim().slice(0, 200);
+    if (!message) return;
+
+    io.to(roomId).emit('chat-message', {
+      id: `${Date.now()}-${socket.id}`,
+      text: message,
+      from: player.color,
+      senderId: socket.id,
+      timestamp: Date.now(),
+    });
+  });
   socket.on('theme-change', ({ roomId, theme }) => {
     const room = rooms.get(roomId);
     if (!room) return;
@@ -291,6 +385,8 @@ io.on('connection', (socket) => {
    */
   socket.on('disconnect', () => {
     console.log(`Player disconnected: ${socket.id}`);
+    removeFromQueue(socket.id);
+    broadcastOnlineCount();
 
     // Find and clean up rooms with this player
     rooms.forEach((room, roomId) => {

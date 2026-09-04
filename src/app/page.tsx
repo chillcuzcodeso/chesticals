@@ -8,6 +8,8 @@ import { CapturedPieces } from '@/components/chess/CapturedPieces';
 import { RoomControls } from '@/components/ui/RoomControls';
 import { ThemeSearch } from '@/components/ui/ThemeSearch';
 import { HUD } from '@/components/ui/HUD';
+import { GameOverBanner } from '@/components/ui/GameOverBanner';
+import { ChatPanel } from '@/components/ui/ChatPanel';
 import { useChessGame } from '@/hooks/useChessGame';
 import { useMultiplayer } from '@/hooks/useMultiplayer';
 import { useTheme } from '@/hooks/useTheme';
@@ -16,6 +18,7 @@ const HomePage: FC = () => {
   // Track if the last move was sent (to avoid double-sending)
   const lastSentMoveRef = useRef<{from: string, to: string} | null>(null);
   const [isMusicMuted, setIsMusicMuted] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   const {
     game,
@@ -26,6 +29,7 @@ const HomePage: FC = () => {
     isGameOver,
     result,
     capturedPieces,
+    isCheckmate,
     onDrop,
     onSquareClick,
     makeMove,
@@ -39,10 +43,16 @@ const HomePage: FC = () => {
     isConnected,
     opponentDisconnected,
     isPaused,
+    onlineCount,
+    isSearching,
+    chatMessages,
     createRoom,
     joinRoom,
     leaveRoom,
+    findGame,
+    cancelFindGame,
     sendMove,
+    sendChat,
     sendThemeChange,
     pauseGame,
     resumeGame,
@@ -52,6 +62,7 @@ const HomePage: FC = () => {
     onGamePaused,
     onGameResumed,
     onGameReset,
+    onMatchFound,
   } = useMultiplayer();
 
   const {
@@ -163,8 +174,22 @@ const HomePage: FC = () => {
     });
     onGameReset(() => {
       resetGame();
+      setBannerDismissed(false);
+      lastSentMoveRef.current = null;
     });
   }, [onGamePaused, onGameResumed, onGameReset, resetGame]);
+
+  useEffect(() => {
+    onMatchFound(() => {
+      resetGame();
+      setBannerDismissed(false);
+      lastSentMoveRef.current = null;
+    });
+  }, [onMatchFound, resetGame]);
+
+  useEffect(() => {
+    if (!isCheckmate) setBannerDismissed(false);
+  }, [isCheckmate]);
 
   /**
    * Handle game reset
@@ -260,6 +285,7 @@ const HomePage: FC = () => {
         roomId={roomId}
         playerColor={playerColor}
         isMusicMuted={isMusicMuted}
+        onlineCount={onlineCount}
         onMusicToggle={handleMusicToggle}
       />
 
@@ -309,8 +335,8 @@ const HomePage: FC = () => {
                 </div>
 
                 {/* Chess Board */}
-                <div className="flex w-full min-w-0 justify-center">
-                  <div className="w-full max-w-2xl" style={{ aspectRatio: '1/1' }}>
+                <div className="relative flex w-full min-w-0 justify-center">
+                  <div className="relative w-full max-w-2xl" style={{ aspectRatio: '1/1' }}>
                     <ChessBoard
                       position={position}
                       validMoves={validMoves}
@@ -322,6 +348,20 @@ const HomePage: FC = () => {
                       onDrop={handleDrop}
                       onSquareClick={handleSquareClick}
                       canDragPiece={canDragPiece}
+                    />
+                    <GameOverBanner
+                      visible={
+                        (isCheckmate || (isGameOver && game.isDraw())) &&
+                        !!playerColor &&
+                        !bannerDismissed &&
+                        (roomStatus === 'playing' || roomStatus === 'finished')
+                      }
+                      isWinner={
+                        (playerColor === 'white' && currentTurn === 'b') ||
+                        (playerColor === 'black' && currentTurn === 'w')
+                      }
+                      isDraw={isGameOver && !isCheckmate && game.isDraw()}
+                      onDismiss={() => setBannerDismissed(true)}
                     />
                   </div>
                 </div>
@@ -355,6 +395,9 @@ const HomePage: FC = () => {
             onJoinRoom={joinRoom}
             onLeaveRoom={leaveRoom}
             onResetGame={handleResetGame}
+            isSearching={isSearching}
+            onFindGame={findGame}
+            onCancelFindGame={cancelFindGame}
           />
         </div>
 
@@ -365,7 +408,7 @@ const HomePage: FC = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed bottom-4 left-4 text-xs text-slate-400 z-40"
+              className="fixed bottom-4 left-1/2 z-30 hidden -translate-x-1/2 text-xs text-slate-400 sm:block"
             >
               Photo by{' '}
               <a
@@ -437,6 +480,14 @@ const HomePage: FC = () => {
               🔄 Reset
             </motion.button>
           </div>
+        )}
+
+        {roomId && (
+          <ChatPanel
+            messages={chatMessages}
+            disabled={opponentDisconnected}
+            onSend={sendChat}
+          />
         )}
 
         {/* Music removed - YouTube embeds don't work reliably */}
