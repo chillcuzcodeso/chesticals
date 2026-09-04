@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ChessboardStyles } from "@/components/chess/ChessboardWrapper";
 
 export const metadata: Metadata = {
   title: "Chesticals - Real-time Multiplayer Chess",
@@ -13,7 +14,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ChessboardStyles />
+        {children}
+      </body>
     </html>
   );
 }
