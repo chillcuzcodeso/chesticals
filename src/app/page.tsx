@@ -294,10 +294,10 @@ const HomePage: FC = () => {
         >
           <div className="w-full max-w-7xl">
             <div className="backdrop-blur-2xl bg-black/30 border border-white/10 rounded-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] p-6 md:p-8">
-              <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-center">
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-6 items-start">
                 {/* Chess Board */}
-                <div className="flex justify-center">
-                  <div className="w-full max-w-2xl aspect-square">
+                <div className="flex justify-center w-full">
+                  <div className="w-full max-w-2xl" style={{ aspectRatio: '1/1' }}>
                     <ChessBoard
                       position={position}
                       validMoves={validMoves}
