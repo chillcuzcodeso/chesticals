@@ -12,7 +12,7 @@ interface ChessClockProps {
   playerColor: 'white' | 'black' | null;
   canPunchWhite: boolean;
   canPunchBlack: boolean;
-  onPunchClock: (color: ClockColor) => void;
+  onPunchClock: (color: 'white' | 'black') => void;
 }
 
 export const ChessClock: FC<ChessClockProps> = ({
