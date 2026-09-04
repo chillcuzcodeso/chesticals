@@ -30,11 +30,16 @@ export const ChessBoard: FC<ChessBoardProps> = ({
 }) => {
   // Wrapper to debug if react-chessboard is calling onDrop
   const handlePieceDrop = (sourceSquare: string, targetSquare: string) => {
-    alert(`🎯 ChessBoard received drop: ${sourceSquare} → ${targetSquare}`);
+    alert(`🎯 BOARD ORIENTATION: ${orientation}\n🎯 DROP: ${sourceSquare} → ${targetSquare}`);
     const result = onDrop(sourceSquare as Square, targetSquare as Square);
-    alert(`🎯 ChessBoard onDrop returned: ${result}`);
+    alert(`🎯 Result: ${result}`);
     return result;
   };
+
+  // Log when board mounts with orientation
+  if (typeof window !== 'undefined') {
+    console.log('🎲 ChessBoard mounted with orientation:', orientation);
+  }
 
   /**
    * Generate custom square styles for:
@@ -86,6 +91,7 @@ export const ChessBoard: FC<ChessBoardProps> = ({
         boardOrientation={orientation}
         customSquareStyles={customSquareStyles}
         boardWidth={600}
+        isDraggablePiece={() => true}
         customBoardStyle={{
           borderRadius: '12px',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',
